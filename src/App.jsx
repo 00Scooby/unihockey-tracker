@@ -1,122 +1,108 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import { useState, useEffect } from 'react'
+import { collection, getDocs } from 'firebase/firestore'
+import { db } from './firebase'
+import RosterManager from './components/RosterManager'
+import LiveTracker from './components/LiveTracker'
+import StatsOverview from './components/StatsOverview'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [currentView, setCurrentView] = useState('menu');
+  const [teamId, setTeamId] = useState(localStorage.getItem('teamId') || '');
+  const [tempTeamId, setTempTeamId] = useState('');
+  const [existingTeams, setExistingTeams] = useState([]);
+
+  // Sucht nach bereits existierenden Teams in der Datenbank
+  useEffect(() => {
+    if (!teamId) {
+      const fetchExistingTeams = async () => {
+        try {
+          const querySnapshot = await getDocs(collection(db, "players"));
+          const teams = new Set();
+          querySnapshot.forEach(doc => {
+            if (doc.data().teamId) {
+              teams.add(doc.data().teamId);
+            }
+          });
+          setExistingTeams(Array.from(teams));
+        } catch (error) {
+          console.error("Fehler beim Laden der Teams:", error);
+        }
+      };
+      fetchExistingTeams();
+    }
+  }, [teamId]);
+
+  const handleSetTeam = (e) => {
+    e.preventDefault();
+    if (tempTeamId.trim()) {
+      const formattedId = tempTeamId.trim().toLowerCase().replace(/\s+/g, '-');
+      setTeamId(formattedId);
+      localStorage.setItem('teamId', formattedId);
+    }
+  };
+
+  const handleLogout = () => {
+    setTeamId('');
+    setTempTeamId('');
+    localStorage.removeItem('teamId');
+    setCurrentView('menu');
+  };
+
+  if (!teamId) {
+    return (
+      <div className="app-container">
+        <header className="app-header"><h1>Unihockey Tracker</h1></header>
+        <main className="login-container">
+          <h2>Team einrichten</h2>
+          <p>Wähle ein bestehendes Team aus der Liste oder tippe einen neuen Code ein, um ein neues Team zu gründen.</p>
+          <form onSubmit={handleSetTeam} className="team-form">
+            <input
+              type="text"
+              list="team-options"
+              placeholder="Team-Code..."
+              value={tempTeamId}
+              onChange={e => setTempTeamId(e.target.value)}
+            />
+            {/* Hier wird die Vorschlagsliste gerendert */}
+            <datalist id="team-options">
+              {existingTeams.map(t => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
+            <button type="submit" className="btn-start">Gerät koppeln</button>
+          </form>
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app-container">
+      <header className="app-header">
+        <h1>Unihockey Tracker</h1>
+        <div className="header-controls">
+          <span className="team-badge">Team: {teamId}</span>
+          {currentView !== 'menu' && (
+            <button className="nav-btn" onClick={() => setCurrentView('menu')}>Menü</button>
+          )}
+          <button className="nav-btn logout-btn" onClick={handleLogout}>Team wechseln</button>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      </header>
 
-      <div className="ticks"></div>
+      <main>
+        {currentView === 'menu' && (
+          <div className="menu-grid">
+            <button className="menu-btn" onClick={() => setCurrentView('roster')}>Kaderverwaltung</button>
+            <button className="menu-btn" onClick={() => setCurrentView('tracker')}>Neues Spiel starten</button>
+            <button className="menu-btn stats-btn" onClick={() => setCurrentView('stats')}>Saisonstatistik</button>
+          </div>
+        )}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        {currentView === 'roster' && <RosterManager teamId={teamId} />}
+        {currentView === 'tracker' && <LiveTracker teamId={teamId} />}
+        {currentView === 'stats' && <StatsOverview teamId={teamId} />}
+      </main>
+    </div>
   )
 }
-
-export default App

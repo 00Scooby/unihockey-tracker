@@ -12,7 +12,18 @@ export default function App() {
   const [tempTeamId, setTempTeamId] = useState('');
   const [existingTeams, setExistingTeams] = useState([]);
 
-  // Sucht nach bereits existierenden Teams in der Datenbank
+  // NEU: Darkmode State initialisieren
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
   useEffect(() => {
     if (!teamId) {
       const fetchExistingTeams = async () => {
@@ -52,7 +63,12 @@ export default function App() {
   if (!teamId) {
     return (
       <div className="app-container">
-        <header className="app-header"><h1>Unihockey Tracker</h1></header>
+        <header className="app-header">
+          <h1>Unihockey Tracker</h1>
+          <button className="nav-btn theme-toggle" onClick={toggleTheme}>
+            {theme === 'light' ? '🌙 Darkmode' : '☀️ Lightmode'}
+          </button>
+        </header>
         <main className="login-container">
           <h2>Team einrichten</h2>
           <p>Wähle ein bestehendes Team aus der Liste oder tippe einen neuen Code ein, um ein neues Team zu gründen.</p>
@@ -64,7 +80,6 @@ export default function App() {
               value={tempTeamId}
               onChange={e => setTempTeamId(e.target.value)}
             />
-            {/* Hier wird die Vorschlagsliste gerendert */}
             <datalist id="team-options">
               {existingTeams.map(t => (
                 <option key={t} value={t} />
@@ -83,10 +98,13 @@ export default function App() {
         <h1>Unihockey Tracker</h1>
         <div className="header-controls">
           <span className="team-badge">Team: {teamId}</span>
+          <button className="nav-btn theme-toggle" onClick={toggleTheme}>
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
           {currentView !== 'menu' && (
             <button className="nav-btn" onClick={() => setCurrentView('menu')}>Menü</button>
           )}
-          <button className="nav-btn logout-btn" onClick={handleLogout}>Team wechseln</button>
+          <button className="nav-btn logout-btn" onClick={handleLogout}>Wechseln</button>
         </div>
       </header>
 

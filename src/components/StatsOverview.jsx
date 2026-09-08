@@ -8,12 +8,11 @@ export default function StatsOverview({ teamId }) {
     const [loading, setLoading] = useState(true);
     const [expandedGame, setExpandedGame] = useState(null);
 
-    // NEU: State für den Drittel-Filter
     const [periodFilter, setPeriodFilter] = useState('Total');
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [teamId]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -58,7 +57,6 @@ export default function StatsOverview({ teamId }) {
         setExpandedGame(prev => prev === gameId ? null : gameId);
     };
 
-    // Hilfsfunktion zum sauberen Aufsummieren der Werte
     const accumulateStats = (target, source) => {
         if (!source) return;
         target.goals += source.goals || 0;
@@ -80,11 +78,9 @@ export default function StatsOverview({ teamId }) {
             const playerGameData = game.stats[playerId];
             if (playerGameData) {
                 stats.gamesPlayed += 1;
-
                 if (periodFilter === 'Total') {
                     Object.values(playerGameData).forEach(period => accumulateStats(stats, period));
                 } else {
-                    // Nur das ausgewählte Drittel addieren
                     accumulateStats(stats, playerGameData[periodFilter]);
                 }
             }
@@ -118,8 +114,20 @@ export default function StatsOverview({ teamId }) {
         };
     };
 
-    const goalies = players.filter(p => p.position === 'Torhüter');
-    const fieldPlayers = players.filter(p => p.position === 'Feldspieler');
+    // Saison-Sortierung Feldspieler
+    const fieldPlayers = players
+        .filter(p => p.position === 'Feldspieler')
+        .map(p => ({ ...p, stats: calculateSeasonStats(p.id) }))
+        .sort((a, b) => {
+            if (b.stats.points !== a.stats.points) return b.stats.points - a.stats.points;
+            return b.stats.goals - a.stats.goals;
+        });
+
+    // Saison-Sortierung Torhüter
+    const goalies = players
+        .filter(p => p.position === 'Torhüter')
+        .map(p => ({ ...p, stats: calculateSeasonStats(p.id) }))
+        .sort((a, b) => b.stats.savePercentage - a.stats.savePercentage);
 
     if (loading) return <div className="stats-container"><h2>Lade Statistiken...</h2></div>;
 
@@ -128,7 +136,6 @@ export default function StatsOverview({ teamId }) {
             <div className="stats-header-container">
                 <h2>Saisonstatistik</h2>
 
-                {/* FILTER DROPDOWN */}
                 <div className="filter-section">
                     <label htmlFor="period-filter">Werte anzeigen für: </label>
                     <select
@@ -155,7 +162,7 @@ export default function StatsOverview({ teamId }) {
                     </thead>
                     <tbody>
                         {fieldPlayers.map(p => {
-                            const s = calculateSeasonStats(p.id);
+                            const s = p.stats;
                             return (
                                 <tr key={p.id}>
                                     <td>{p.number}</td><td>{p.name}</td><td>{s.gamesPlayed}</td><td>{s.goals}</td><td>{s.assists}</td>
@@ -175,7 +182,7 @@ export default function StatsOverview({ teamId }) {
                     </thead>
                     <tbody>
                         {goalies.map(p => {
-                            const s = calculateSeasonStats(p.id);
+                            const s = p.stats;
                             return (
                                 <tr key={p.id}>
                                     <td>{p.number}</td><td>{p.name}</td><td>{s.gamesPlayed}</td><td>{s.goals}</td><td>{s.assists}</td>
@@ -223,23 +230,30 @@ export default function StatsOverview({ teamId }) {
                                                     <tr><th>Nr.</th><th>Name</th><th>Tore</th><th>Assists</th><th>Punkte</th><th>+/-</th><th>Schuss</th><th>Daneben</th><th>Block</th><th>Pässe</th></tr>
                                                 </thead>
                                                 <tbody>
-                                                    {players.filter(p => p.position === 'Feldspieler' && game.stats[p.id]).map(p => {
-                                                        const s = calculateSingleGameStats(game, p.id);
-                                                        return (
-                                                            <tr key={p.id}>
-                                                                <td>{p.number}</td>
-                                                                <td>{p.name}</td>
-                                                                <td>{s.goals}</td>
-                                                                <td>{s.assists}</td>
-                                                                <td><strong>{s.points}</strong></td>
-                                                                <td className={s.diff >= 0 ? 'positive-stat' : 'negative-stat'}>{s.diff > 0 ? `+${s.diff}` : s.diff}</td>
-                                                                <td>{s.shotsOnGoal}</td>
-                                                                <td>{s.shotsMissed}</td>
-                                                                <td>{s.shotsBlocked}</td>
-                                                                <td>{s.passes}</td>
-                                                            </tr>
-                                                        );
-                                                    })}
+                                                    {players
+                                                        .filter(p => p.position === 'Feldspieler' && game.stats[p.id])
+                                                        .map(p => ({ ...p, singleStats: calculateSingleGameStats(game, p.id) }))
+                                                        .sort((a, b) => {
+                                                            if (b.singleStats.points !== a.singleStats.points) return b.singleStats.points - a.singleStats.points;
+                                                            return b.singleStats.goals - a.singleStats.goals;
+                                                        })
+                                                        .map(p => {
+                                                            const s = p.singleStats;
+                                                            return (
+                                                                <tr key={p.id}>
+                                                                    <td>{p.number}</td>
+                                                                    <td>{p.name}</td>
+                                                                    <td>{s.goals}</td>
+                                                                    <td>{s.assists}</td>
+                                                                    <td><strong>{s.points}</strong></td>
+                                                                    <td className={s.diff >= 0 ? 'positive-stat' : 'negative-stat'}>{s.diff > 0 ? `+${s.diff}` : s.diff}</td>
+                                                                    <td>{s.shotsOnGoal}</td>
+                                                                    <td>{s.shotsMissed}</td>
+                                                                    <td>{s.shotsBlocked}</td>
+                                                                    <td>{s.passes}</td>
+                                                                </tr>
+                                                            );
+                                                        })}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -253,21 +267,25 @@ export default function StatsOverview({ teamId }) {
                                                     <tr><th>Nr.</th><th>Name</th><th>Tore</th><th>Assists</th><th>Gehalten</th><th>Gegentore</th><th>Quote</th><th>Pässe</th></tr>
                                                 </thead>
                                                 <tbody>
-                                                    {players.filter(p => p.position === 'Torhüter' && game.stats[p.id]).map(p => {
-                                                        const s = calculateSingleGameStats(game, p.id);
-                                                        return (
-                                                            <tr key={p.id}>
-                                                                <td>{p.number}</td>
-                                                                <td>{p.name}</td>
-                                                                <td>{s.goals}</td>
-                                                                <td>{s.assists}</td>
-                                                                <td>{s.saves}</td>
-                                                                <td>{s.goalsAgainst}</td>
-                                                                <td><strong>{s.savePercentage}%</strong></td>
-                                                                <td>{s.passes}</td>
-                                                            </tr>
-                                                        );
-                                                    })}
+                                                    {players
+                                                        .filter(p => p.position === 'Torhüter' && game.stats[p.id])
+                                                        .map(p => ({ ...p, singleStats: calculateSingleGameStats(game, p.id) }))
+                                                        .sort((a, b) => b.singleStats.savePercentage - a.singleStats.savePercentage)
+                                                        .map(p => {
+                                                            const s = p.singleStats;
+                                                            return (
+                                                                <tr key={p.id}>
+                                                                    <td>{p.number}</td>
+                                                                    <td>{p.name}</td>
+                                                                    <td>{s.goals}</td>
+                                                                    <td>{s.assists}</td>
+                                                                    <td>{s.saves}</td>
+                                                                    <td>{s.goalsAgainst}</td>
+                                                                    <td><strong>{s.savePercentage}%</strong></td>
+                                                                    <td>{s.passes}</td>
+                                                                </tr>
+                                                            );
+                                                        })}
                                                 </tbody>
                                             </table>
                                         </div>

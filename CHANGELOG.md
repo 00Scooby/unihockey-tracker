@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.1-beta] - 2026-09-08
+
+### Added
+- Generische Unihockey-Icons (`logo.svg`, `icons.svg`, `favicon.svg`) für PWA-Manifest und Browser-Tab implementiert.
+
 ## [0.1.0-beta] - 2026-09-08
 
 ### Added

@@ -2,17 +2,16 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBqiaJK3HVYPP_VlLCKM1rOSkGdFuMoqL4",
-    authDomain: "unihockey-tracker.firebaseapp.com",
-    projectId: "unihockey-tracker",
-    storageBucket: "unihockey-tracker.firebasestorage.app",
-    messagingSenderId: "908581863825",
-    appId: "1:908581863825:web:f6fdf6c8037d7700261a30"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
 
-// Aktiviert die lokale Speicherung für den Offline-Einsatz in der Turnhalle
 const db = initializeFirestore(app, {
     localCache: persistentLocalCache({
         tabManager: persistentMultipleTabManager()

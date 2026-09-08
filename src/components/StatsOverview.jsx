@@ -8,6 +8,7 @@ export default function StatsOverview({ teamId }) {
     const [loading, setLoading] = useState(true);
     const [expandedGame, setExpandedGame] = useState(null);
 
+    // NEU: Erweiterter Filter ('Total', 'Avg', '1', '2', '3', '4')
     const [periodFilter, setPeriodFilter] = useState('Total');
 
     useEffect(() => {
@@ -78,7 +79,7 @@ export default function StatsOverview({ teamId }) {
             const playerGameData = game.stats[playerId];
             if (playerGameData) {
                 stats.gamesPlayed += 1;
-                if (periodFilter === 'Total') {
+                if (periodFilter === 'Total' || periodFilter === 'Avg') {
                     Object.values(playerGameData).forEach(period => accumulateStats(stats, period));
                 } else {
                     accumulateStats(stats, playerGameData[periodFilter]);
@@ -86,11 +87,39 @@ export default function StatsOverview({ teamId }) {
             }
         });
 
+        // Wenn "Durchschnitt" gewählt ist und der Spieler mindestens 1 Spiel hat, teilen wir die Werte durch die Anzahl Spiele
+        const gp = stats.gamesPlayed > 0 ? stats.gamesPlayed : 1;
+        const isAvg = periodFilter === 'Avg';
+
+        const finalGoals = isAvg ? stats.goals / gp : stats.goals;
+        const finalAssists = isAvg ? stats.assists / gp : stats.assists;
+        const finalPlus = isAvg ? stats.plus / gp : stats.plus;
+        const finalMinus = isAvg ? stats.minus / gp : stats.minus;
+        const finalShots = isAvg ? stats.shotsOnGoal / gp : stats.shotsOnGoal;
+        const finalMissed = isAvg ? stats.shotsMissed / gp : stats.shotsMissed;
+        const finalBlocked = isAvg ? stats.shotsBlocked / gp : stats.shotsBlocked;
+        const finalPasses = isAvg ? stats.passes / gp : stats.passes;
+        const finalSaves = isAvg ? stats.saves / gp : stats.saves;
+        const finalGoalsAgainst = isAvg ? stats.goalsAgainst / gp : stats.goalsAgainst;
+
+        const formatVal = (val) => isAvg ? val.toFixed(1) : val;
+
         return {
-            ...stats,
-            points: stats.goals + stats.assists,
-            diff: stats.plus - stats.minus,
-            savePercentage: stats.saves + stats.goalsAgainst > 0 ? ((stats.saves / (stats.saves + stats.goalsAgainst)) * 100).toFixed(1) : 0
+            gamesPlayed: stats.gamesPlayed,
+            goals: formatVal(finalGoals),
+            assists: formatVal(finalAssists),
+            plus: formatVal(finalPlus),
+            minus: formatVal(finalMinus),
+            shotsOnGoal: formatVal(finalShots),
+            shotsMissed: formatVal(finalMissed),
+            shotsBlocked: formatVal(finalBlocked),
+            passes: formatVal(finalPasses),
+            saves: formatVal(finalSaves),
+            goalsAgainst: formatVal(finalGoalsAgainst),
+            points: isAvg ? (Number(formatVal(finalGoals)) + Number(formatVal(finalAssists))).toFixed(1) : stats.goals + stats.assists,
+            diff: isAvg ? (Number(formatVal(finalPlus)) - Number(formatVal(finalMinus))).toFixed(1) : stats.plus - stats.minus,
+            savePercentage: stats.saves + stats.goalsAgainst > 0 ? ((stats.saves / (stats.saves + stats.goalsAgainst)) * 100).toFixed(1) : 0,
+            rawPoints: stats.goals + stats.assists // Für exakte Sortierung bei Avg
         };
     };
 
@@ -99,7 +128,7 @@ export default function StatsOverview({ teamId }) {
         const playerGameData = game.stats[playerId];
 
         if (playerGameData) {
-            if (periodFilter === 'Total') {
+            if (periodFilter === 'Total' || periodFilter === 'Avg') {
                 Object.values(playerGameData).forEach(period => accumulateStats(stats, period));
             } else {
                 accumulateStats(stats, playerGameData[periodFilter]);
@@ -114,13 +143,13 @@ export default function StatsOverview({ teamId }) {
         };
     };
 
-    // Saison-Sortierung Feldspieler
+    // Saison-Sortierung Feldspieler (nach Punkten, bei Avg nach rawPoints)
     const fieldPlayers = players
         .filter(p => p.position === 'Feldspieler')
         .map(p => ({ ...p, stats: calculateSeasonStats(p.id) }))
         .sort((a, b) => {
-            if (b.stats.points !== a.stats.points) return b.stats.points - a.stats.points;
-            return b.stats.goals - a.stats.goals;
+            if (Number(b.stats.points) !== Number(a.stats.points)) return Number(b.stats.points) - Number(a.stats.points);
+            return Number(b.stats.goals) - Number(a.stats.goals);
         });
 
     // Saison-Sortierung Torhüter
@@ -131,20 +160,27 @@ export default function StatsOverview({ teamId }) {
 
     if (loading) return <div className="stats-container"><h2>Lade Statistiken...</h2></div>;
 
+    const getFilterLabel = () => {
+        if (periodFilter === 'Total') return 'Saison Total';
+        if (periodFilter === 'Avg') return 'Saison Durchschnitt (pro Spiel)';
+        return `${periodFilter}. Drittel`;
+    };
+
     return (
         <div className="stats-container">
             <div className="stats-header-container">
                 <h2>Saisonstatistik</h2>
 
                 <div className="filter-section">
-                    <label htmlFor="period-filter">Werte anzeigen für: </label>
+                    <label htmlFor="period-filter">Ansicht: </label>
                     <select
                         id="period-filter"
                         className="filter-select"
                         value={periodFilter}
                         onChange={(e) => setPeriodFilter(e.target.value)}
                     >
-                        <option value="Total">Gesamtes Spiel (Total)</option>
+                        <option value="Total">Saison Total (kumuliert)</option>
+                        <option value="Avg">Saison Durchschnitt (pro Spiel)</option>
                         <option value="1">1. Drittel</option>
                         <option value="2">2. Drittel</option>
                         <option value="3">3. Drittel</option>
@@ -155,18 +191,41 @@ export default function StatsOverview({ teamId }) {
 
             {/* --- SAISON TABELLEN --- */}
             <div className="stats-table-wrapper">
-                <h3>Feldspieler ({periodFilter === 'Total' ? 'Saison Total' : `${periodFilter}. Drittel`})</h3>
+                <h3>Feldspieler ({getFilterLabel()})</h3>
                 <table className="stats-table">
                     <thead>
-                        <tr><th>Nr.</th><th>Name</th><th>Spiele</th><th>Tore</th><th>Assists</th><th>Punkte</th><th>+/-</th></tr>
+                        <tr>
+                            <th>Nr.</th>
+                            <th>Name</th>
+                            <th>Spiele</th>
+                            <th>Tore</th>
+                            <th>Assists</th>
+                            <th>Punkte</th>
+                            <th>+/-</th>
+                            <th>Schuss T.</th>
+                            <th>Daneben</th>
+                            <th>Block</th>
+                            <th>Pässe</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {fieldPlayers.map(p => {
                             const s = p.stats;
                             return (
                                 <tr key={p.id}>
-                                    <td>{p.number}</td><td>{p.name}</td><td>{s.gamesPlayed}</td><td>{s.goals}</td><td>{s.assists}</td>
-                                    <td><strong>{s.points}</strong></td><td className={s.diff >= 0 ? 'positive-stat' : 'negative-stat'}>{s.diff > 0 ? `+${s.diff}` : s.diff}</td>
+                                    <td>{p.number}</td>
+                                    <td>{p.name}</td>
+                                    <td>{s.gamesPlayed}</td>
+                                    <td>{s.goals}</td>
+                                    <td>{s.assists}</td>
+                                    <td><strong>{s.points}</strong></td>
+                                    <td className={Number(s.diff) >= 0 ? 'positive-stat' : 'negative-stat'}>
+                                        {Number(s.diff) > 0 ? `+${s.diff}` : s.diff}
+                                    </td>
+                                    <td>{s.shotsOnGoal}</td>
+                                    <td>{s.shotsMissed}</td>
+                                    <td>{s.shotsBlocked}</td>
+                                    <td>{s.passes}</td>
                                 </tr>
                             );
                         })}
@@ -175,18 +234,35 @@ export default function StatsOverview({ teamId }) {
             </div>
 
             <div className="stats-table-wrapper">
-                <h3>Torhüter ({periodFilter === 'Total' ? 'Saison Total' : `${periodFilter}. Drittel`})</h3>
+                <h3>Torhüter ({getFilterLabel()})</h3>
                 <table className="stats-table">
                     <thead>
-                        <tr><th>Nr.</th><th>Name</th><th>Spiele</th><th>Tore</th><th>Assists</th><th>Gehalten</th><th>Gegentore</th><th>Quote</th></tr>
+                        <tr>
+                            <th>Nr.</th>
+                            <th>Name</th>
+                            <th>Spiele</th>
+                            <th>Tore</th>
+                            <th>Assists</th>
+                            <th>Gehalten</th>
+                            <th>Gegentore</th>
+                            <th>Quote</th>
+                            <th>Pässe</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {goalies.map(p => {
                             const s = p.stats;
                             return (
                                 <tr key={p.id}>
-                                    <td>{p.number}</td><td>{p.name}</td><td>{s.gamesPlayed}</td><td>{s.goals}</td><td>{s.assists}</td>
-                                    <td>{s.saves}</td><td>{s.goalsAgainst}</td><td><strong>{s.savePercentage}%</strong></td>
+                                    <td>{p.number}</td>
+                                    <td>{p.name}</td>
+                                    <td>{s.gamesPlayed}</td>
+                                    <td>{s.goals}</td>
+                                    <td>{s.assists}</td>
+                                    <td>{s.saves}</td>
+                                    <td>{s.goalsAgainst}</td>
+                                    <td><strong>{s.savePercentage}%</strong></td>
+                                    <td>{s.passes}</td>
                                 </tr>
                             );
                         })}
@@ -217,13 +293,11 @@ export default function StatsOverview({ teamId }) {
                                     </div>
                                 </div>
 
-                                {/* DETAIL-ANSICHT FÜR EINZELNES SPIEL */}
                                 {expandedGame === game.id && (
                                     <div className="game-details-box">
-
                                         <div className="stats-table-wrapper" style={{ margin: '0 0 1rem 0', padding: '0', boxShadow: 'none' }}>
                                             <h4 style={{ color: '#2C99FE', marginBottom: '0.5rem' }}>
-                                                Feldspieler (Statistik: {periodFilter === 'Total' ? 'Total' : `${periodFilter}. Drittel`})
+                                                Feldspieler (Statistik: {getFilterLabel()})
                                             </h4>
                                             <table className="stats-table small-table">
                                                 <thead>
@@ -260,7 +334,7 @@ export default function StatsOverview({ teamId }) {
 
                                         <div className="stats-table-wrapper" style={{ margin: '0', padding: '0', boxShadow: 'none' }}>
                                             <h4 style={{ color: '#2C99FE', marginBottom: '0.5rem' }}>
-                                                Torhüter (Statistik: {periodFilter === 'Total' ? 'Total' : `${periodFilter}. Drittel`})
+                                                Torhüter (Statistik: {getFilterLabel()})
                                             </h4>
                                             <table className="stats-table small-table">
                                                 <thead>
@@ -289,7 +363,6 @@ export default function StatsOverview({ teamId }) {
                                                 </tbody>
                                             </table>
                                         </div>
-
                                     </div>
                                 )}
                             </li>

@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, doc, setDoc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function RosterManager({ teamId }) {
     const [players, setPlayers] = useState([]);
     const [newPlayer, setNewPlayer] = useState({ name: '', number: '', position: 'Feldspieler' });
 
+    // Passwort-State
+    const [teamPassword, setTeamPassword] = useState('');
+    const [passwordMsg, setPasswordMsg] = useState('');
+
     const fetchRoster = async () => {
-        // Filtert Spieler, die genau zu diesem Team gehören
         const q = query(collection(db, "players"), where("teamId", "==", teamId));
         const querySnapshot = await getDocs(q);
         const rosterData = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -15,13 +18,45 @@ export default function RosterManager({ teamId }) {
         setPlayers(rosterData);
     };
 
-    useEffect(() => { fetchRoster(); }, [teamId]);
+    const fetchTeamSecurity = async () => {
+        try {
+            const teamDocRef = doc(db, "teams", teamId);
+            const teamSnap = await getDoc(teamDocRef);
+            if (teamSnap.exists() && teamSnap.data().password) {
+                setTeamPassword(teamSnap.data().password);
+            }
+        } catch (error) {
+            console.error("Fehler beim Laden der Sicherheitseinstellungen:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchRoster();
+        fetchTeamSecurity();
+    }, [teamId]);
+
+    const handleSavePassword = async (e) => {
+        e.preventDefault();
+        try {
+            const teamDocRef = doc(db, "teams", teamId);
+            if (teamPassword.trim() === '') {
+                await setDoc(teamDocRef, { password: '' }, { merge: true });
+                setPasswordMsg('Passwortschutz wurde entfernt.');
+            } else {
+                await setDoc(teamDocRef, { password: teamPassword.trim() }, { merge: true });
+                setPasswordMsg('Passwort erfolgreich gespeichert!');
+            }
+            setTimeout(() => setPasswordMsg(''), 3000);
+        } catch (error) {
+            console.error("Fehler beim Speichern des Passworts:", error);
+            setPasswordMsg('Fehler beim Speichern.');
+        }
+    };
 
     const handleAdd = async (e) => {
         e.preventDefault();
         if (!newPlayer.name || !newPlayer.number) return;
 
-        // Speichert den neuen Spieler zusammen mit der teamId
         await addDoc(collection(db, "players"), {
             ...newPlayer,
             teamId: teamId
@@ -38,7 +73,25 @@ export default function RosterManager({ teamId }) {
 
     return (
         <div className="roster-container">
-            <h2>Kaderverwaltung</h2>
+            <h2>Kaderverwaltung ({teamId})</h2>
+
+            {/* SICHERHEITS-BEREICH: PASSWORT VERWALTEN */}
+            <div className="stats-table-wrapper" style={{ padding: '1.2rem', marginBottom: '2rem', marginTop: '1rem' }}>
+                <h3 style={{ fontSize: '1rem', marginBottom: '0.8rem', color: 'var(--text-color)' }}>Team-Sicherheit (Passwortschutz)</h3>
+                <form onSubmit={handleSavePassword} style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <input
+                        type="password"
+                        placeholder="Neues Passwort (leer lassen für keins)..."
+                        value={teamPassword}
+                        onChange={(e) => setTeamPassword(e.target.value)}
+                        style={{ flex: '1 1 200px', padding: '0.8rem', border: '1px solid var(--input-border)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--text-color)' }}
+                    />
+                    <button type="submit" className="btn-add" style={{ width: 'auto', padding: '0.8rem 1.2rem' }}>
+                        Speichern
+                    </button>
+                </form>
+                {passwordMsg && <p style={{ fontSize: '0.85rem', color: '#28a745', marginTop: '0.5rem' }}>{passwordMsg}</p>}
+            </div>
 
             <form onSubmit={handleAdd} className="add-player-form">
                 <input type="number" placeholder="Nr." value={newPlayer.number} onChange={e => setNewPlayer({ ...newPlayer, number: e.target.value })} />

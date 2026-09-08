@@ -5,7 +5,7 @@ import { db } from '../firebase';
 
 const defaultPeriodStats = { goals: 0, assists: 0, plus: 0, minus: 0, shotsOnGoal: 0, shotsMissed: 0, shotsBlocked: 0, passes: 0, saves: 0, goalsAgainst: 0 };
 
-export default function LiveTracker({ teamId }) {
+export default function LiveTracker({ teamId, onGameActiveChange }) {
     const [allPlayers, setAllPlayers] = useState([]);
     const [selectedIds, setSelectedIds] = useState([]);
     const [gameStarted, setGameStarted] = useState(false);
@@ -18,8 +18,14 @@ export default function LiveTracker({ teamId }) {
         type: 'Meisterschaft'
     });
 
-    // Hier speichern wir zentral alle Klicks des gesamten Teams
     const [gameStats, setGameStats] = useState({});
+
+    // Meldet an die App.jsx, ob ein Spiel läuft (für den Menü-Guard)
+    useEffect(() => {
+        if (onGameActiveChange) {
+            onGameActiveChange(gameStarted);
+        }
+    }, [gameStarted, onGameActiveChange]);
 
     useEffect(() => {
         const fetchRoster = async () => {
@@ -30,7 +36,7 @@ export default function LiveTracker({ teamId }) {
             setAllPlayers(rosterData);
         };
         fetchRoster();
-    }, []);
+    }, [teamId]);
 
     const togglePlayer = (id) => {
         setSelectedIds(prev => prev.includes(id) ? prev.filter(pId => pId !== id) : [...prev, id]);
@@ -56,14 +62,12 @@ export default function LiveTracker({ teamId }) {
             const gameDocument = {
                 meta: gameInfo,
                 stats: gameStats,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                teamId: teamId
             };
 
-            // Speichert das gesamte Spiel in der Collection "games"
-            await addDoc(collection(db, "games"), { ...gameDocument, teamId: teamId });
-
+            await addDoc(collection(db, "games"), gameDocument);
             alert("Spiel erfolgreich gespeichert!");
-            // Reset für das nächste Spiel
             setGameStarted(false);
             setSelectedIds([]);
             setGameInfo({ date: new Date().toISOString().split('T')[0], opponent: '', type: 'Meisterschaft' });
@@ -75,7 +79,6 @@ export default function LiveTracker({ teamId }) {
         }
     };
 
-    // Funktion wird an die PlayerRow weitergegeben
     const updateGlobalStat = (playerId, period, statKey, value) => {
         setGameStats(prev => ({
             ...prev,
@@ -175,7 +178,7 @@ function PlayerRow({ player, currentPeriod, playerStats, onUpdateStat }) {
             <div className="player-info">
                 <span className="player-number">#{player.number}</span>
                 <span className="player-name">{player.name}</span>
-                <span style={{ fontSize: '0.8rem', color: '#666', marginLeft: 'auto' }}>{player.position}</span>
+                <span className="player-pos-badge">{player.position}</span>
             </div>
 
             <div className="player-stats">
@@ -193,7 +196,7 @@ function PlayerRow({ player, currentPeriod, playerStats, onUpdateStat }) {
                         <StatButton label="Assist" statKey="assists" />
                         <StatButton label="Plus" statKey="plus" />
                         <StatButton label="Minus" statKey="minus" />
-                        <StatButton label="Schuss Tor" statKey="shotsOnGoal" />
+                        <StatButton label="Schuss T." statKey="shotsOnGoal" />
                         <StatButton label="Daneben" statKey="shotsMissed" />
                         <StatButton label="Block" statKey="shotsBlocked" />
                         <StatButton label="Pass" statKey="passes" />

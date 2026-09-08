@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.5-beta] - 2026-09-08
+
+### Added
+- Linien-Management im Live-Tracker eingeführt: Spieler können beim Einrichten des Spiels gezielt den Blöcken 1–4 oder der Ersatzbank zugeteilt werden.
+- Spielmodus-Auswahl (Kleinfeld als Standard vs. Grossfeld) bei der Spiel-Ersteinrichtung integriert.
+- "Alle auswählen / abwählen"-Button im Setup-Bildschirm hinzugefügt.
+- Gruppierte Darstellung der Spieler nach Blöcken, Torhütern am Ende.
+
+### Changed
+- Ultrakompaktes Redesign des Live-Trackers: Margen, Abstände und Statistik-Buttons wurden drastisch minimiert, um maximale Sichtbarkeit an der Bande zu gewährleisten.
+
 ## [0.1.4-beta] - 2026-09-08
 
 ### Added

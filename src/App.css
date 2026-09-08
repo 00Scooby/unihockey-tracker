@@ -623,3 +623,190 @@ button:active {
   opacity: 0.8;
   display: block;
 }
+
+/* --- ULTRAL-KOMPAKT LIVE TRACKER STYLES --- */
+.player-row-compact {
+  background: var(--surface-color);
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  box-shadow: 0 1px 2px var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.player-info-compact {
+  font-size: 1rem;
+  font-weight: bold;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.2rem;
+  display: flex;
+  align-items: center;
+}
+
+.player-stats-compact {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.3rem;
+}
+
+@media (max-width: 1024px) {
+  .player-stats-compact {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .player-stats-compact {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.stat-box-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-alt);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  min-width: 0;
+}
+
+.stat-label-compact {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.1rem;
+  text-align: center;
+}
+
+.stat-controls-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.stat-value-compact {
+  font-size: 1rem;
+  font-weight: bold;
+  width: 1.2rem;
+  text-align: center;
+  color: var(--text-color);
+}
+
+.player-row-compact button {
+  width: 28px;
+  height: 28px;
+  font-size: 0.8rem;
+  border-radius: 4px;
+}
+
+.btn-plus-compact {
+  background: #2C99FE;
+  color: white;
+}
+
+.btn-minus-compact {
+  background: var(--surface-alt);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+/* --- LINUEN-AUSWAHL IM SETUP --- */
+.setup-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-color);
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  box-shadow: 0 1px 3px var(--shadow);
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .setup-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* --- NOCH KOMPAKTERER LIVE TRACKER --- */
+
+/* Abstand über und unter den Block-Titeln verkleinern */
+.tracker-container h4 {
+  margin-top: 0.3rem !important;
+  margin-bottom: 0.2rem !important;
+}
+
+/* Abstand zwischen den Spieler-Zeilen minimieren */
+.player-list {
+  gap: 0.4rem !important;
+}
+
+/* Innenabstand der Spieler-Box selbst verkleinern */
+.player-row-compact {
+  background: var(--surface-color);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem !important;
+  box-shadow: 0 1px 2px var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem !important;
+}
+
+/* Kopfzeile der Spielereile (Name & Nummer) kompakter */
+.player-info-compact {
+  font-size: 0.95rem;
+  font-weight: bold;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.1rem !important;
+  display: flex;
+  align-items: center;
+}
+
+/* Innenabstand der einzelnen Statistik-Boxen (Tor, Assist, Plus/Minus etc.) verringern */
+.stat-box-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-alt);
+  padding: 0.1rem 0.2rem !important;
+  border-radius: 4px;
+  min-width: 0;
+}
+
+/* Label (z.B. TOR, PLUS) kompakter */
+.stat-label-compact {
+  font-size: 0.6rem !important;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0 !important;
+  text-align: center;
+}
+
+/* Steuerungselemente und Buttons innerhalb der Box enger zusammenziehen */
+.stat-controls-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem !important;
+}
+
+.stat-value-compact {
+  font-size: 0.95rem !important;
+  font-weight: bold;
+  width: 1rem !important;
+  text-align: center;
+  color: var(--text-color);
+}
+
+/* Plus/Minus-Buttons noch etwas flacher machen */
+.player-row-compact button {
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 0.75rem !important;
+  border-radius: 3px;
+}

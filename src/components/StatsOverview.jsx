@@ -2,6 +2,24 @@ import { useState, useEffect } from 'react';
 import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
+// Helper functions for sorting extracted to improve readability and performance
+const sortGamesByDateDesc = (a, b) => new Date(b.meta.date) - new Date(a.meta.date);
+const sortPlayersByNumberAsc = (a, b) => Number(a.number) - Number(b.number);
+
+const sortSeasonFieldPlayers = (a, b) => {
+    if (Number(b.stats.points) !== Number(a.stats.points)) return Number(b.stats.points) - Number(a.stats.points);
+    return Number(b.stats.goals) - Number(a.stats.goals);
+};
+
+const sortSeasonGoalies = (a, b) => b.stats.savePercentage - a.stats.savePercentage;
+
+const sortSingleGameFieldPlayers = (a, b) => {
+    if (b.singleStats.points !== a.singleStats.points) return b.singleStats.points - a.singleStats.points;
+    return b.singleStats.goals - a.singleStats.goals;
+};
+
+const sortSingleGameGoalies = (a, b) => b.singleStats.savePercentage - a.singleStats.savePercentage;
+
 export default function StatsOverview({ teamId }) {
     const [players, setPlayers] = useState([]);
     const [games, setGames] = useState([]);
@@ -29,9 +47,9 @@ export default function StatsOverview({ teamId }) {
             const rosterData = playersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
             const gamesData = gamesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-            gamesData.sort((a, b) => new Date(b.meta.date) - new Date(a.meta.date));
+            gamesData.sort(sortGamesByDateDesc);
 
-            setPlayers(rosterData.sort((a, b) => Number(a.number) - Number(b.number)));
+            setPlayers(rosterData.sort(sortPlayersByNumberAsc));
             setGames(gamesData);
         } catch (error) {
             console.error("Fehler beim Laden der Daten:", error);
@@ -147,16 +165,13 @@ export default function StatsOverview({ teamId }) {
     const fieldPlayers = players
         .filter(p => p.position === 'Feldspieler')
         .map(p => ({ ...p, stats: calculateSeasonStats(p.id) }))
-        .sort((a, b) => {
-            if (Number(b.stats.points) !== Number(a.stats.points)) return Number(b.stats.points) - Number(a.stats.points);
-            return Number(b.stats.goals) - Number(a.stats.goals);
-        });
+        .sort(sortSeasonFieldPlayers);
 
     // Saison-Sortierung Torhüter
     const goalies = players
         .filter(p => p.position === 'Torhüter')
         .map(p => ({ ...p, stats: calculateSeasonStats(p.id) }))
-        .sort((a, b) => b.stats.savePercentage - a.stats.savePercentage);
+        .sort(sortSeasonGoalies);
 
     if (loading) return <div className="stats-container"><h2>Lade Statistiken...</h2></div>;
 
@@ -307,10 +322,7 @@ export default function StatsOverview({ teamId }) {
                                                     {players
                                                         .filter(p => p.position === 'Feldspieler' && game.stats[p.id])
                                                         .map(p => ({ ...p, singleStats: calculateSingleGameStats(game, p.id) }))
-                                                        .sort((a, b) => {
-                                                            if (b.singleStats.points !== a.singleStats.points) return b.singleStats.points - a.singleStats.points;
-                                                            return b.singleStats.goals - a.singleStats.goals;
-                                                        })
+                                                        .sort(sortSingleGameFieldPlayers)
                                                         .map(p => {
                                                             const s = p.singleStats;
                                                             return (
@@ -344,7 +356,7 @@ export default function StatsOverview({ teamId }) {
                                                     {players
                                                         .filter(p => p.position === 'Torhüter' && game.stats[p.id])
                                                         .map(p => ({ ...p, singleStats: calculateSingleGameStats(game, p.id) }))
-                                                        .sort((a, b) => b.singleStats.savePercentage - a.singleStats.savePercentage)
+                                                        .sort(sortSingleGameGoalies)
                                                         .map(p => {
                                                             const s = p.singleStats;
                                                             return (

@@ -2,6 +2,40 @@ import { useState, useEffect } from 'react';
 import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
+export const accumulateStats = (target, source) => {
+    if (!source) return;
+    target.goals += source.goals || 0;
+    target.assists += source.assists || 0;
+    target.plus += source.plus || 0;
+    target.minus += source.minus || 0;
+    target.shotsOnGoal += source.shotsOnGoal || 0;
+    target.shotsMissed += source.shotsMissed || 0;
+    target.shotsBlocked += source.shotsBlocked || 0;
+    target.passes += source.passes || 0;
+    target.saves += source.saves || 0;
+    target.goalsAgainst += source.goalsAgainst || 0;
+};
+
+export const calculateSingleGameStats = (game, playerId, periodFilter) => {
+    let stats = { goals: 0, assists: 0, plus: 0, minus: 0, shotsOnGoal: 0, shotsMissed: 0, shotsBlocked: 0, passes: 0, saves: 0, goalsAgainst: 0 };
+    const playerGameData = game?.stats?.[playerId];
+
+    if (playerGameData) {
+        if (periodFilter === 'Total' || periodFilter === 'Avg') {
+            Object.values(playerGameData).forEach(period => accumulateStats(stats, period));
+        } else {
+            accumulateStats(stats, playerGameData[periodFilter]);
+        }
+    }
+
+    return {
+        ...stats,
+        points: stats.goals + stats.assists,
+        diff: stats.plus - stats.minus,
+        savePercentage: stats.saves + stats.goalsAgainst > 0 ? ((stats.saves / (stats.saves + stats.goalsAgainst)) * 100).toFixed(1) : 0
+    };
+};
+
 export default function StatsOverview({ teamId }) {
     const [players, setPlayers] = useState([]);
     const [games, setGames] = useState([]);
@@ -58,19 +92,6 @@ export default function StatsOverview({ teamId }) {
         setExpandedGame(prev => prev === gameId ? null : gameId);
     };
 
-    const accumulateStats = (target, source) => {
-        if (!source) return;
-        target.goals += source.goals || 0;
-        target.assists += source.assists || 0;
-        target.plus += source.plus || 0;
-        target.minus += source.minus || 0;
-        target.shotsOnGoal += source.shotsOnGoal || 0;
-        target.shotsMissed += source.shotsMissed || 0;
-        target.shotsBlocked += source.shotsBlocked || 0;
-        target.passes += source.passes || 0;
-        target.saves += source.saves || 0;
-        target.goalsAgainst += source.goalsAgainst || 0;
-    };
 
     const calculateSeasonStats = (playerId) => {
         let stats = { gamesPlayed: 0, goals: 0, assists: 0, plus: 0, minus: 0, shotsOnGoal: 0, shotsMissed: 0, shotsBlocked: 0, passes: 0, saves: 0, goalsAgainst: 0 };
@@ -123,25 +144,6 @@ export default function StatsOverview({ teamId }) {
         };
     };
 
-    const calculateSingleGameStats = (game, playerId) => {
-        let stats = { goals: 0, assists: 0, plus: 0, minus: 0, shotsOnGoal: 0, shotsMissed: 0, shotsBlocked: 0, passes: 0, saves: 0, goalsAgainst: 0 };
-        const playerGameData = game.stats[playerId];
-
-        if (playerGameData) {
-            if (periodFilter === 'Total' || periodFilter === 'Avg') {
-                Object.values(playerGameData).forEach(period => accumulateStats(stats, period));
-            } else {
-                accumulateStats(stats, playerGameData[periodFilter]);
-            }
-        }
-
-        return {
-            ...stats,
-            points: stats.goals + stats.assists,
-            diff: stats.plus - stats.minus,
-            savePercentage: stats.saves + stats.goalsAgainst > 0 ? ((stats.saves / (stats.saves + stats.goalsAgainst)) * 100).toFixed(1) : 0
-        };
-    };
 
     // Saison-Sortierung Feldspieler (nach Punkten, bei Avg nach rawPoints)
     const fieldPlayers = players
@@ -306,7 +308,7 @@ export default function StatsOverview({ teamId }) {
                                                 <tbody>
                                                     {players
                                                         .filter(p => p.position === 'Feldspieler' && game.stats[p.id])
-                                                        .map(p => ({ ...p, singleStats: calculateSingleGameStats(game, p.id) }))
+                                                        .map(p => ({ ...p, singleStats: calculateSingleGameStats(game, p.id, periodFilter) }))
                                                         .sort((a, b) => {
                                                             if (b.singleStats.points !== a.singleStats.points) return b.singleStats.points - a.singleStats.points;
                                                             return b.singleStats.goals - a.singleStats.goals;
@@ -343,7 +345,7 @@ export default function StatsOverview({ teamId }) {
                                                 <tbody>
                                                     {players
                                                         .filter(p => p.position === 'Torhüter' && game.stats[p.id])
-                                                        .map(p => ({ ...p, singleStats: calculateSingleGameStats(game, p.id) }))
+                                                        .map(p => ({ ...p, singleStats: calculateSingleGameStats(game, p.id, periodFilter) }))
                                                         .sort((a, b) => b.singleStats.savePercentage - a.singleStats.savePercentage)
                                                         .map(p => {
                                                             const s = p.singleStats;

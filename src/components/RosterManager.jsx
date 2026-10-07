@@ -76,7 +76,7 @@ export default function RosterManager({ teamId }) {
             <h2>Kaderverwaltung ({teamId})</h2>
 
             {/* SICHERHEITS-BEREICH: PASSWORT VERWALTEN */}
-            <div className="settings-card">
+            <div className="stats-table-wrapper" style={{ padding: '1.2rem', marginBottom: '2rem', marginTop: '1rem' }}>
                 <h3 style={{ fontSize: '1rem', marginBottom: '0.8rem', color: 'var(--text-color)' }}>Team-Sicherheit (Passwortschutz)</h3>
                 <form onSubmit={handleSavePassword} style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <input

@@ -227,6 +227,8 @@ button:active {
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   text-align: center;
+  width: 100%;
+  height: auto;
 }
 
 .menu-card:hover {
@@ -486,6 +488,15 @@ button:active {
 
 .stats-btn {
   background: #17a2b8;
+  color: white;
+}
+
+.stats-btn h3 {
+  color: white !important;
+}
+
+.stats-btn p {
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .game-history-list {

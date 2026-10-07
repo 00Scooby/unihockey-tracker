@@ -195,9 +195,21 @@ export default function App() {
       <main>
         {currentView === 'menu' && (
           <div className="menu-grid">
-            <button className="menu-btn" onClick={() => setCurrentView('roster')}>Kaderverwaltung</button>
-            <button className="menu-btn" onClick={() => setCurrentView('tracker')}>Neues Spiel starten</button>
-            <button className="menu-btn stats-btn" onClick={() => setCurrentView('stats')}>Saisonstatistik</button>
+            <button className="menu-card" onClick={() => setCurrentView('roster')}>
+              <span className="menu-icon">👥</span>
+              <h3>Kaderverwaltung</h3>
+              <p>Spieler hinzufügen und bearbeiten</p>
+            </button>
+            <button className="menu-card" onClick={() => setCurrentView('tracker')}>
+              <span className="menu-icon">⏱️</span>
+              <h3>Neues Spiel</h3>
+              <p>Live-Statistiken erfassen</p>
+            </button>
+            <button className="menu-card stats-btn" onClick={() => setCurrentView('stats')}>
+              <span className="menu-icon">📊</span>
+              <h3>Saisonstatistik</h3>
+              <p>Auswertungen und Tabellen ansehen</p>
+            </button>
           </div>
         )}
 

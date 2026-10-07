@@ -6,7 +6,7 @@ import LiveTracker from './components/LiveTracker'
 import StatsOverview from './components/StatsOverview'
 import './App.css'
 
-const VERSION = "v0.1.6-beta";
+const VERSION = "v0.1.7-beta";
 
 export default function App() {
   const [currentView, setCurrentView] = useState('menu');

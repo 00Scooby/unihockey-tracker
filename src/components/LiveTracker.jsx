@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FaPlus, FaMinus } from 'react-icons/fa';
 import { collection, getDocs, addDoc, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
+import { updateStatLogic } from './LiveTracker.utils';
 
 const defaultPeriodStats = { goals: 0, assists: 0, plus: 0, minus: 0, shotsOnGoal: 0, shotsMissed: 0, shotsBlocked: 0, passes: 0, saves: 0, goalsAgainst: 0 };
 
@@ -111,16 +112,7 @@ export default function LiveTracker({ teamId, onGameActiveChange }) {
     };
 
     const updateGlobalStat = (playerId, period, statKey, value) => {
-        setGameStats(prev => ({
-            ...prev,
-            [playerId]: {
-                ...prev[playerId],
-                [period]: {
-                    ...prev[playerId][period],
-                    [statKey]: Math.max(0, prev[playerId][period][statKey] + value)
-                }
-            }
-        }));
+        setGameStats(prev => updateStatLogic(prev, playerId, period, statKey, value));
     };
 
     if (!gameStarted) {

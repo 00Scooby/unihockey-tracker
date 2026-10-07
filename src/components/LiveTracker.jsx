@@ -86,9 +86,6 @@ export default function LiveTracker({ teamId, onGameActiveChange }) {
     };
 
     const handleSaveGame = async () => {
-        const isConfirmed = window.confirm("Möchtest du das Spiel wirklich abschliessen und speichern?");
-        if (!isConfirmed) return;
-
         setIsSaving(true);
         try {
             const gameDocument = {

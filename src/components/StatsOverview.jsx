@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
+const calculateSavePercentage = (saves, goalsAgainst) => (saves + goalsAgainst) > 0 ? ((saves / (saves + goalsAgainst)) * 100).toFixed(1) : 0;
+
 export default function StatsOverview({ teamId }) {
     const [players, setPlayers] = useState([]);
     const [games, setGames] = useState([]);
@@ -118,7 +120,7 @@ export default function StatsOverview({ teamId }) {
             goalsAgainst: formatVal(finalGoalsAgainst),
             points: isAvg ? (Number(formatVal(finalGoals)) + Number(formatVal(finalAssists))).toFixed(1) : stats.goals + stats.assists,
             diff: isAvg ? (Number(formatVal(finalPlus)) - Number(formatVal(finalMinus))).toFixed(1) : stats.plus - stats.minus,
-            savePercentage: stats.saves + stats.goalsAgainst > 0 ? ((stats.saves / (stats.saves + stats.goalsAgainst)) * 100).toFixed(1) : 0,
+            savePercentage: calculateSavePercentage(stats.saves, stats.goalsAgainst),
             rawPoints: stats.goals + stats.assists // Für exakte Sortierung bei Avg
         };
     };
@@ -139,7 +141,7 @@ export default function StatsOverview({ teamId }) {
             ...stats,
             points: stats.goals + stats.assists,
             diff: stats.plus - stats.minus,
-            savePercentage: stats.saves + stats.goalsAgainst > 0 ? ((stats.saves / (stats.saves + stats.goalsAgainst)) * 100).toFixed(1) : 0
+            savePercentage: calculateSavePercentage(stats.saves, stats.goalsAgainst)
         };
     };
 

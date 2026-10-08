@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { collection, getDocs, doc, getDoc, query, where, deleteDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore'
 import { db } from './firebase'
 import RosterManager from './components/RosterManager'
 import LiveTracker from './components/LiveTracker'
@@ -95,61 +95,6 @@ export default function App() {
     }
   };
 
-  const handleDeleteTeam = async () => {
-    if (!tempTeamId.trim()) return;
-    const formattedId = tempTeamId.trim().toLowerCase().replace(/\s+/g, '-');
-
-    try {
-      const teamDocRef = doc(db, "teams", formattedId);
-      const teamSnap = await getDoc(teamDocRef);
-
-      if (teamSnap.exists() && teamSnap.data().password) {
-        if (!needsPassword) {
-          setNeedsPassword(true);
-          return;
-        }
-        if (teamSnap.data().password !== teamPassword) {
-          alert("Falsches Passwort für dieses Team!");
-          return;
-        }
-      }
-
-      const confirmDelete = window.confirm(`Bist du sicher, dass du das Team "${formattedId}" und alle zugehörigen Daten (Spieler, Spiele) endgültig löschen möchtest?`);
-      if (!confirmDelete) {
-        if (needsPassword) {
-          setNeedsPassword(false);
-          setTeamPassword('');
-        }
-        return;
-      }
-
-      // 1. Delete players
-      const playersQuery = query(collection(db, "players"), where("teamId", "==", formattedId));
-      const playersSnap = await getDocs(playersQuery);
-      await Promise.all(playersSnap.docs.map(playerDoc => deleteDoc(doc(db, "players", playerDoc.id))));
-
-      // 2. Delete games
-      const gamesQuery = query(collection(db, "games"), where("teamId", "==", formattedId));
-      const gamesSnap = await getDocs(gamesQuery);
-      await Promise.all(gamesSnap.docs.map(gameDoc => deleteDoc(doc(db, "games", gameDoc.id))));
-
-      // 3. Delete team
-      if (teamSnap.exists()) {
-        await deleteDoc(teamDocRef);
-      }
-
-      alert(`Team "${formattedId}" wurde erfolgreich gelöscht.`);
-      setTempTeamId('');
-      setNeedsPassword(false);
-      setTeamPassword('');
-      setExistingTeams(prev => prev.filter(t => t !== formattedId));
-
-    } catch (error) {
-      console.error("Fehler beim Löschen des Teams:", error);
-      alert("Es gab einen Fehler beim Löschen des Teams.");
-    }
-  };
-
   const handleLogout = () => {
     if (isGameActive) {
       const confirmLeave = window.confirm("Achtung: Es läuft ein aktives Spiel! Wenn du das Team wechselst, gehen alle ungespeicherten Daten verloren. Fortfahren?");
@@ -230,16 +175,6 @@ export default function App() {
               </button>
             )}
 
-            {existingTeams.includes(tempTeamId.trim().toLowerCase().replace(/\s+/g, '-')) && (
-              <button
-                type="button"
-                className="nav-btn"
-                style={{ background: '#d32f2f', marginTop: '1rem', width: '100%', color: 'white' }}
-                onClick={handleDeleteTeam}
-              >
-                Team löschen
-              </button>
-            )}
           </form>
         </main>
       </div>
@@ -286,7 +221,7 @@ export default function App() {
           </div>
         )}
 
-        {currentView === 'roster' && <RosterManager teamId={teamId} />}
+        {currentView === 'roster' && <RosterManager teamId={teamId} onLogout={handleLogout} />}
         {currentView === 'tracker' && <LiveTracker teamId={teamId} onGameActiveChange={setIsGameActive} />}
         {currentView === 'stats' && <StatsOverview teamId={teamId} />}
       </main>

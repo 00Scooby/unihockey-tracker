@@ -233,7 +233,7 @@ export default function LiveTracker({ teamId, onGameActiveChange }) {
                 </div>
             </div>
 
-            <div className="player-list" style={{ gap: '1rem' }}>
+            <div className="player-list player-list-grid" style={{ gap: '1rem' }}>
                 {blocks.map(blockName => {
                     const blockPlayers = groupedPlayers[blockName];
                     if (blockPlayers.length === 0) return null;
@@ -279,16 +279,22 @@ export default function LiveTracker({ teamId, onGameActiveChange }) {
 
 function PlayerRow({ player, currentPeriod, playerStats, onUpdateStat }) {
 
-    const StatButton = ({ label, statKey }) => (
-        <div className="stat-box-compact">
-            <span className="stat-label-compact">{label}</span>
-            <div className="stat-controls-compact">
-                <button onClick={() => onUpdateStat(currentPeriod, statKey, -1)} className="btn-minus-compact"><FaMinus /></button>
-                <span className="stat-value-compact">{playerStats[currentPeriod][statKey]}</span>
-                <button onClick={() => onUpdateStat(currentPeriod, statKey, 1)} className="btn-plus-compact"><FaPlus /></button>
+    const StatButton = ({ label, statKey }) => {
+        let statClass = 'stat-neutral';
+        if (['goals', 'assists', 'plus', 'saves'].includes(statKey)) statClass = 'stat-positive';
+        if (['minus', 'goalsAgainst'].includes(statKey)) statClass = 'stat-negative';
+
+        return (
+            <div className={`stat-box-compact ${statClass}`}>
+                <span className="stat-label-compact">{label}</span>
+                <div className="stat-controls-compact">
+                    <button onClick={() => onUpdateStat(currentPeriod, statKey, -1)} className="btn-minus-compact"><FaMinus /></button>
+                    <span className="stat-value-compact">{playerStats[currentPeriod][statKey]}</span>
+                    <button onClick={() => onUpdateStat(currentPeriod, statKey, 1)} className="btn-plus-compact"><FaPlus /></button>
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     return (
         <div className="player-row-compact">

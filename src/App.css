@@ -292,8 +292,14 @@ button:active {
 }
 
 .add-player-form .btn-add {
-  flex: 1 1 100px;
-  width: auto;
+  flex: 1 1 100%;
+}
+
+@media (min-width: 768px) {
+  .add-player-form .btn-add {
+    flex: 1 1 100px;
+    width: auto;
+  }
 }
 
 .add-player-form input,

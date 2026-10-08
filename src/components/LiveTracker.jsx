@@ -221,12 +221,12 @@ export default function LiveTracker({ teamId, onGameActiveChange }) {
                 </div>
 
                 <div className="game-actions">
-                    <select value={currentPeriod} onChange={(e) => setCurrentPeriod(Number(e.target.value))} className="period-select">
-                        <option value={1}>1. Drittel</option>
-                        <option value={2}>2. Drittel</option>
-                        <option value={3}>3. Drittel</option>
-                        <option value={4}>Verlängerung</option>
-                    </select>
+                    <div className="period-btn-group">
+                        <button className={`period-btn ${currentPeriod === 1 ? 'active' : ''}`} onClick={() => setCurrentPeriod(1)}>1</button>
+                        <button className={`period-btn ${currentPeriod === 2 ? 'active' : ''}`} onClick={() => setCurrentPeriod(2)}>2</button>
+                        <button className={`period-btn ${currentPeriod === 3 ? 'active' : ''}`} onClick={() => setCurrentPeriod(3)}>3</button>
+                        <button className={`period-btn ${currentPeriod === 4 ? 'active' : ''}`} onClick={() => setCurrentPeriod(4)}>OT</button>
+                    </div>
                     <button className="btn-save" onClick={handleSaveGame} disabled={isSaving}>
                         {isSaving ? 'Speichert...' : 'Spiel abschliessen'}
                     </button>
@@ -277,10 +277,16 @@ export default function LiveTracker({ teamId, onGameActiveChange }) {
     );
 }
 
-function PlayerRow({ player, currentPeriod, playerStats, onUpdateStat }) {
+const StatButton = ({ label, statKey, currentPeriod, playerStats, onUpdateStat }) => {
+    let statType = 'neutral';
+    if (['goals', 'assists', 'plus', 'saves'].includes(statKey)) {
+        statType = 'positive';
+    } else if (['minus', 'goalsAgainst'].includes(statKey)) {
+        statType = 'negative';
+    }
 
-    const StatButton = ({ label, statKey }) => (
-        <div className="stat-box-compact">
+    return (
+        <div className={`stat-box-compact ${statType}`}>
             <span className="stat-label-compact">{label}</span>
             <div className="stat-controls-compact">
                 <button onClick={() => onUpdateStat(currentPeriod, statKey, -1)} className="btn-minus-compact"><FaMinus /></button>
@@ -289,6 +295,9 @@ function PlayerRow({ player, currentPeriod, playerStats, onUpdateStat }) {
             </div>
         </div>
     );
+};
+
+function PlayerRow({ player, currentPeriod, playerStats, onUpdateStat }) {
 
     return (
         <div className="player-row-compact">
@@ -301,22 +310,22 @@ function PlayerRow({ player, currentPeriod, playerStats, onUpdateStat }) {
             <div className="player-stats-compact">
                 {player.position === 'Torhüter' ? (
                     <>
-                        <StatButton label="Tor" statKey="goals" />
-                        <StatButton label="Gehalten" statKey="saves" />
-                        <StatButton label="Gegentor" statKey="goalsAgainst" />
-                        <StatButton label="Assist" statKey="assists" />
-                        <StatButton label="Pass" statKey="passes" />
+                        <StatButton label="Tor" statKey="goals" currentPeriod={currentPeriod} playerStats={playerStats} onUpdateStat={onUpdateStat} />
+                        <StatButton label="Gehalten" statKey="saves" currentPeriod={currentPeriod} playerStats={playerStats} onUpdateStat={onUpdateStat} />
+                        <StatButton label="Gegentor" statKey="goalsAgainst" currentPeriod={currentPeriod} playerStats={playerStats} onUpdateStat={onUpdateStat} />
+                        <StatButton label="Assist" statKey="assists" currentPeriod={currentPeriod} playerStats={playerStats} onUpdateStat={onUpdateStat} />
+                        <StatButton label="Pass" statKey="passes" currentPeriod={currentPeriod} playerStats={playerStats} onUpdateStat={onUpdateStat} />
                     </>
                 ) : (
                     <>
-                        <StatButton label="Tor" statKey="goals" />
-                        <StatButton label="Assist" statKey="assists" />
-                        <StatButton label="Plus" statKey="plus" />
-                        <StatButton label="Minus" statKey="minus" />
-                        <StatButton label="Schuss T." statKey="shotsOnGoal" />
-                        <StatButton label="Daneben" statKey="shotsMissed" />
-                        <StatButton label="Block" statKey="shotsBlocked" />
-                        <StatButton label="Pass" statKey="passes" />
+                        <StatButton label="Tor" statKey="goals" currentPeriod={currentPeriod} playerStats={playerStats} onUpdateStat={onUpdateStat} />
+                        <StatButton label="Assist" statKey="assists" currentPeriod={currentPeriod} playerStats={playerStats} onUpdateStat={onUpdateStat} />
+                        <StatButton label="Plus" statKey="plus" currentPeriod={currentPeriod} playerStats={playerStats} onUpdateStat={onUpdateStat} />
+                        <StatButton label="Minus" statKey="minus" currentPeriod={currentPeriod} playerStats={playerStats} onUpdateStat={onUpdateStat} />
+                        <StatButton label="Schuss T." statKey="shotsOnGoal" currentPeriod={currentPeriod} playerStats={playerStats} onUpdateStat={onUpdateStat} />
+                        <StatButton label="Daneben" statKey="shotsMissed" currentPeriod={currentPeriod} playerStats={playerStats} onUpdateStat={onUpdateStat} />
+                        <StatButton label="Block" statKey="shotsBlocked" currentPeriod={currentPeriod} playerStats={playerStats} onUpdateStat={onUpdateStat} />
+                        <StatButton label="Pass" statKey="passes" currentPeriod={currentPeriod} playerStats={playerStats} onUpdateStat={onUpdateStat} />
                     </>
                 )}
             </div>

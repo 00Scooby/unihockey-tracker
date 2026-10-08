@@ -49,6 +49,12 @@ export default function App() {
             if (doc.data().teamId) teams.add(doc.data().teamId);
           });
 
+          // 3. Suche in der 'teams' Collection
+          const teamsSnap = await getDocs(collection(db, "teams"));
+          teamsSnap.forEach(doc => {
+            teams.add(doc.id);
+          });
+
           setExistingTeams(Array.from(teams));
         } catch (error) {
           console.error("Fehler beim Laden der Teams:", error);
@@ -168,6 +174,7 @@ export default function App() {
                 Abbrechen
               </button>
             )}
+
           </form>
         </main>
       </div>
@@ -214,7 +221,7 @@ export default function App() {
           </div>
         )}
 
-        {currentView === 'roster' && <RosterManager teamId={teamId} />}
+        {currentView === 'roster' && <RosterManager teamId={teamId} onLogout={handleLogout} />}
         {currentView === 'tracker' && <LiveTracker teamId={teamId} onGameActiveChange={setIsGameActive} />}
         {currentView === 'stats' && <StatsOverview teamId={teamId} />}
       </main>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, deleteDoc, doc, setDoc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function RosterManager({ teamId }) {
+export default function RosterManager({ teamId, onLogout }) {
     const [players, setPlayers] = useState([]);
     const [newPlayer, setNewPlayer] = useState({ name: '', number: '', position: 'Feldspieler' });
 
@@ -71,13 +71,41 @@ export default function RosterManager({ teamId }) {
         fetchRoster();
     };
 
+    const handleDeleteTeam = async () => {
+        const confirmDelete = window.confirm(`Bist du sicher, dass du das Team "${teamId}" und alle zugehörigen Daten (Spieler, Spiele) endgültig löschen möchtest?`);
+        if (!confirmDelete) return;
+
+        try {
+            // 1. Delete players
+            const playersQuery = query(collection(db, "players"), where("teamId", "==", teamId));
+            const playersSnap = await getDocs(playersQuery);
+            await Promise.all(playersSnap.docs.map(playerDoc => deleteDoc(doc(db, "players", playerDoc.id))));
+
+            // 2. Delete games
+            const gamesQuery = query(collection(db, "games"), where("teamId", "==", teamId));
+            const gamesSnap = await getDocs(gamesQuery);
+            await Promise.all(gamesSnap.docs.map(gameDoc => deleteDoc(doc(db, "games", gameDoc.id))));
+
+            // 3. Delete team document
+            await deleteDoc(doc(db, "teams", teamId));
+
+            alert(`Team "${teamId}" wurde erfolgreich gelöscht.`);
+            if (onLogout) {
+                onLogout();
+            }
+        } catch (error) {
+            console.error("Fehler beim Löschen des Teams:", error);
+            alert("Es gab einen Fehler beim Löschen des Teams.");
+        }
+    };
+
     return (
         <div className="roster-container">
             <h2>Kaderverwaltung ({teamId})</h2>
 
             {/* SICHERHEITS-BEREICH: PASSWORT VERWALTEN */}
             <div className="settings-card">
-                <h3 style={{ fontSize: '1rem', marginBottom: '0.8rem', color: 'var(--text-color)' }}>Team-Sicherheit (Passwortschutz)</h3>
+                <h3 style={{ fontSize: '1rem', marginBottom: '0.8rem', color: 'var(--text-color)' }}>Team-Sicherheit & Verwaltung</h3>
                 <form onSubmit={handleSavePassword} style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <input
                         type="password"
@@ -91,6 +119,19 @@ export default function RosterManager({ teamId }) {
                     </button>
                 </form>
                 {passwordMsg && <p style={{ fontSize: '0.85rem', color: '#28a745', marginTop: '0.5rem' }}>{passwordMsg}</p>}
+
+                <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+                    <button
+                        onClick={handleDeleteTeam}
+                        className="btn-delete"
+                        style={{ width: '100%', padding: '0.8rem', fontSize: '1rem' }}
+                    >
+                        Team löschen
+                    </button>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-color)', opacity: 0.8, marginTop: '0.5rem', textAlign: 'center' }}>
+                        Achtung: Dies löscht das Team und alle zugehörigen Daten unwiderruflich.
+                    </p>
+                </div>
             </div>
 
             <form onSubmit={handleAdd} className="add-player-form">
